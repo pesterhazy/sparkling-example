@@ -3,11 +3,11 @@ Flambo example
 
 A quick example to demonstrate how to use Flambo (https://github.com/yieldbot/flambo). Flambo allows you to use Apache Spark (https://spark.apache.org/) from Clojure.
 
-The example is a simple Apache log analyzer. It reads an access log ("access.log" in the project directory) and counts how often URLs were requested, sorted by frequency.
+The example is a simple Apache log analyzer. It reads an access log ("access.log" in the project directory) and counts how often URLs were requested, sorted by frequency. The example was inspired by a [blog post](http://alvinalexander.com/scala/analyzing-apache-access-logs-files-spark-scala) by Alvin Alexander.
 
-To try it out, the only thing you need is `leiningen`; Spark is pulled in automatically as a dependency:
+To try it out, the only thing you need is `leiningen`; Spark is pulled in automatically as a dependency.
 
-1. Get a sample access log:
+1. Get a sample access log, e.g.:
 
         wget -O access.log http://redlug.com/logs/access.log
 
