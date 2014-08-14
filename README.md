@@ -21,4 +21,8 @@ To try it out, the only thing you need is `leiningen`; Spark is pulled in automa
 
         cat output/* | less
 
-Comments welcome at: Paulus Esterhazy <pesterhazy@gmail.com>
+Comments welcome
+
+Paulus Esterhazy
+
+@pesterhazy / pesterhazy@gmail.com
