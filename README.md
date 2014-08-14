@@ -9,16 +9,16 @@ To try it out, the only thing you need is `leiningen`; Spark is pulled in automa
 
 1. Get a sample access log:
 
-    wget -O access.log http://redlug.com/logs/access.log
+        wget -O access.log http://redlug.com/logs/access.log
 
 2. Run the log analysis
 
-    lein repl
-    ...
-    flambo-example.core=> (report-log-entries)
+        lein repl
+        ...
+        flambo-example.core=> (report-log-entries)
 
 3. Check out the results
 
-    cat output/* | less
+        cat output/* | less
 
 Comments welcome at: Paulus Esterhazy <pesterhazy@gmail.com>
