@@ -1,3 +1,4 @@
 .nrepl-port
 .lein-repl-history
 access.log
+output/
