@@ -62,7 +62,7 @@
         (s-api/reduce-by-key (fn [a b] (+ a b)))
         (s-api/map-to-pair (s-destructure/tuple-fn (fn [a b] (s-api/tuple b a))))
         (s-api/sort-by-key false)
-        (s-api/map-to-pair (s-destructure/tuple-fn (fn [a b] [b a])))
+        (s-api/map-to-pair (s-destructure/tuple-fn (fn [a b] (s-api/tuple b a))))
         (s-api/map (s-destructure/tuple-fn (fn [& xs] (clojure.string/join "\t" xs))))
         (s-api/save-as-text-file out)
         )))
