@@ -1,8 +1,8 @@
-(ns flambo-example.core
-  (:require  [flambo.api :as f]
-             [flambo.conf :as fconf]
+(ns sparkling-example.core
+  (:require  [sparkling.api :as s-api]
+             [sparkling.conf :as s-conf]
+             [sparkling.destructuring :as s-destructure]
              [clj-time.format :as tf]
-             [clj-time.core :as tc]
              [clojure.tools.trace :refer [trace]]
              [clojure.java.shell :refer [sh]]
              [clojure.pprint :refer [pprint]]
@@ -18,13 +18,13 @@
           })
 
 (defn new-spark-context []
-  (let [c (-> (fconf/spark-conf)
-              (fconf/master master)
-              (fconf/app-name "tfidf")
-              (fconf/set "spark.akka.timeout" "300")
-              (fconf/set conf)
-              (fconf/set-executor-env env))]
-    (f/spark-context c) ))
+  (let [c (-> (s-conf/spark-conf)
+              (s-conf/master master)
+              (s-conf/app-name "tfidf")
+              (s-conf/set "spark.akka.timeout" "300")
+              (s-conf/set conf)
+              (s-conf/set-executor-env env))]
+    (s-api/spark-context c) ))
 
 (defonce sc (delay (new-spark-context)))
 
@@ -53,18 +53,18 @@
 
 (defn process-log-entries [in out]
   (let [
-        lines (f/text-file @sc in)
+        lines (s-api/text-file @sc in)
         ]
     (-> lines
-        (f/map (f/fn [line] (parse-line line)))
-        (f/filter (f/fn [entry] (= "200" (:status entry))))
-        (f/map (f/fn [entry] [(:uri entry) 1]))
-        (f/reduce-by-key (f/fn [a b] (+ a b)))
-        (f/map (f/fn [[a b]] [b a]))
-        (f/sort-by-key false)
-        (f/map (f/fn [[a b]] [b a]))
-        (f/map (f/fn [xs] (clojure.string/join "\t" xs)))
-        (f/save-as-text-file out)
+        (s-api/map parse-line)
+        (s-api/filter (fn [entry] (= "200" (:status entry))))
+        (s-api/map-to-pair (fn [entry] (s-api/tuple (:uri entry) 1)))
+        (s-api/reduce-by-key (fn [a b] (+ a b)))
+        (s-api/map-to-pair (s-destructure/tuple-fn (fn [a b] (s-api/tuple b a))))
+        (s-api/sort-by-key false)
+        (s-api/map-to-pair (s-destructure/tuple-fn (fn [a b] [b a])))
+        (s-api/map (s-destructure/tuple-fn (fn [& xs] (clojure.string/join "\t" xs))))
+        (s-api/save-as-text-file out)
         )))
 
 ;; call these from the REPL
