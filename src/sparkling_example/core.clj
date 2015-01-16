@@ -70,8 +70,8 @@
 ;; call these from the REPL
 ;;
 
-(defn report-log-entries []
-  (let [in "access.log"
-        out "output"]
-    (sh "rm" "-rf" out)
-    (process-log-entries in out))) 
+(defn report-log-entries
+  ([] (report-log-entries "our.log"))
+  ([in] (let [out "output"]
+          (sh "rm" "-rf" out)
+          (process-log-entries in out)))) 
