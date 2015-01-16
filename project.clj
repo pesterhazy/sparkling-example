@@ -14,7 +14,7 @@ Inspired by http://alvinalexander.com/scala/analyzing-apache-access-logs-files-s
                  [clj-time "0.8.0"]
                  [org.clojure/tools.trace "0.7.8"]
                  [clj-glob "1.0.0"]
-                 ]
+                 [com.brainbot/iniconfig "0.2.0"]]
   :jvm-opts ["-Xmx2g"]
   :main ^:skip-aot sparkling-example.core
   :target-path "target/%s"
