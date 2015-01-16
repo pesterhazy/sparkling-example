@@ -17,6 +17,23 @@
           "spark.files.overwrite" "true"
           })
 
+(defn new-spark-context-aws
+  "Creates a new spark context with access to your AWS credentials"
+  []
+  (let [aws-config (get (read-ini (str (System/getProperty "user.home") "/.aws/credentials")) "default")
+        access-key (get aws-config "aws_access_key_id")
+        secret-key (get aws-config "aws_secret_access_key")
+        c (-> (s-conf/spark-conf)
+              (s-conf/master master)
+              (s-conf/app-name "tfidf")
+              (s-conf/set "spark.akka.timeout" "300")
+              (s-conf/set conf)
+              (s-conf/set-executor-env env))
+        context (s-api/spark-context c)] 
+    (.set (.hadoopConfiguration context) "fs.s3n.awsAccessKeyId" access-key)
+    (.set (.hadoopConfiguration context) "fs.s3n.awsSecretAccessKey" secret-key)
+    context))
+
 (defn new-spark-context []
   (let [c (-> (s-conf/spark-conf)
               (s-conf/master master)
@@ -71,7 +88,7 @@
 ;;
 
 (defn report-log-entries
-  ([] (report-log-entries "our.log"))
+  ([] (report-log-entries "in.log"))
   ([in] (let [out "output"]
           (sh "rm" "-rf" out)
           (process-log-entries in out)))) 
