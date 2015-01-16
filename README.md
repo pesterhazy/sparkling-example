@@ -1,4 +1,4 @@
-Flambo example
+Sparkling example
 ----------------
 
 A quick example to demonstrate how to use Sparkling (https://github.com/gorillalabs/sparkling). Sparkling allows you to use Apache Spark (https://spark.apache.org/) from Clojure.
