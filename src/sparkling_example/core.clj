@@ -1,7 +1,7 @@
 (ns sparkling-example.core
-  (:require  [sparkling.api :as s-api]
+  (:require  [sparkling.api :as s]
              [sparkling.conf :as s-conf]
-             [sparkling.destructuring :as s-destructure]
+             [sparkling.destructuring :as sd]
              [clj-time.format :as tf]
              [clojure.tools.trace :refer [trace]]
              [clojure.java.shell :refer [sh]]
@@ -29,7 +29,7 @@
               (s-conf/set "spark.akka.timeout" "300")
               (s-conf/set conf)
               (s-conf/set-executor-env env))
-        context (s-api/spark-context c)] 
+        context (s/spark-context c)] 
     (.set (.hadoopConfiguration context) "fs.s3n.awsAccessKeyId" access-key)
     (.set (.hadoopConfiguration context) "fs.s3n.awsSecretAccessKey" secret-key)
     context))
@@ -37,11 +37,11 @@
 (defn new-spark-context []
   (let [c (-> (s-conf/spark-conf)
               (s-conf/master master)
-              (s-conf/app-name "tfidf")
+              (s-conf/app-name "sparkling")
               (s-conf/set "spark.akka.timeout" "300")
               (s-conf/set conf)
               (s-conf/set-executor-env env))]
-    (s-api/spark-context c) ))
+    (s/spark-context c) ))
 
 (defonce sc (delay (new-spark-context)))
 
@@ -69,17 +69,17 @@
     transform-log-entry))
 
 (defn process-log-entries [in out]
-  (let [lines (s-api/text-file @sc in)]
+  (let [lines (s/text-file @sc in)]
     (-> lines
-        (s-api/map parse-line)
-        (s-api/filter (fn [entry] (= "200" (:status entry))))
-        (s-api/map-to-pair (fn [entry] (s-api/tuple (:uri entry) 1)))
-        (s-api/reduce-by-key (fn [a b] (+ a b)))
-        (s-api/map-to-pair (s-destructure/key-value-fn (fn [a b] (s-api/tuple b a))))
-        (s-api/sort-by-key false)
-        (s-api/map-to-pair (s-destructure/key-value-fn (fn [a b] (s-api/tuple b a))))
-        (s-api/map (s-destructure/key-value-fn (fn [& xs] (clojure.string/join "\t" xs))))
-        (s-api/save-as-text-file out))))
+        (s/map parse-line)
+        (s/filter (fn [entry] (= "200" (:status entry))))
+        (s/map-to-pair (fn [entry] (s/tuple (:uri entry) 1)))
+        (s/reduce-by-key (fn [a b] (+ a b)))
+        (s/map-to-pair (sd/key-value-fn (fn [a b] (s/tuple b a))))
+        (s/sort-by-key false)
+        (s/map-to-pair (sd/key-value-fn (fn [a b] (s/tuple b a))))
+        (s/map (sd/key-value-fn (fn [& xs] (clojure.string/join "\t" xs))))
+        (s/save-as-text-file out))))
 
 ;; call these from the REPL
 ;;
@@ -94,12 +94,24 @@
   (->> lines
        count))
 
+(defn line-count* [lines]
+  (->> lines
+       s/count))
+
 (defn group-by-status-code [lines]
   (->> lines
        (map parse-line)
        (map (fn [entry] [(:status entry) 1]))
        (reduce (fn [a [k v]] (update-in a [k] #((fnil + 0) % v))) {})
        (map identity)))
+
+(defn group-by-status-code* [lines]
+  (-> lines
+       (s/map parse-line)
+       (s/map-to-pair (fn [entry] (s/tuple (:status entry) 1)))
+       (s/reduce-by-key +)
+       (s/map (sd/key-value-fn vector))
+       (s/collect)))
 
 (defn top-errors [lines]
   (->> lines
@@ -110,15 +122,27 @@
        (sort-by val >)
        (take 10)))
 
-(defn process-log-file [f]
+(defn top-errors* [lines]
+  (-> lines
+      (s/map parse-line)
+      (s/filter (fn [entry] (not= "200" (:status entry))))
+      (s/map-to-pair (fn [entry] (s/tuple (:uri entry) 1)))
+      (s/reduce-by-key +)
+      ;; flip
+      (s/map-to-pair (sd/key-value-fn (fn [a b] (s/tuple b a))))
+      (s/sort-by-key false) ;; descending order
+      ;; flip
+      (s/map-to-pair (sd/key-value-fn (fn [a b] (s/tuple b a))))
+      (s/map (sd/key-value-fn vector))
+      (s/take 10)))
+
+(defn process [f]
   (with-open [rdr (clojure.java.io/reader "in.log")]
     (let [result (f (line-seq rdr))]
       (if (seq? result)
         (doall result)
         result))))
 
-(defn example2 []
-  (let [lines (s-api/text-file @sc "in.log")]
-    (-> lines
-        (s-api/map parse-line)
-        (s-api/count))))
+(defn process* [f]
+  (let [lines-rdd (s/text-file @sc "in.log")]
+    (f lines-rdd)))
